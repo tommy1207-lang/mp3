@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>豬奶奶的音樂盒</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#7b4b35">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://via.placeholder.com/192/7b4b35/ffffff?text=Pig">
+
+    <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-paper: #f4ecd8;
+            --wood-brown: #7b4b35;
+            --wood-light: #a67c52;
+            --forest-green: #2d5a27;
+            --highlight-green: #dcedc8;
+            --sky-blue: #7fbcf6;
+            --text-dark: #3e2723;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Kosugi Maru', sans-serif;
+            background-color: var(--bg-paper);
+            background-image: radial-gradient(#d3c6b1 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .player-container {
+            background-color: #fcf9f2;
+            width: 100%;
+            max-width: 400px;
+            border: 12px solid var(--wood-brown);
+            border-radius: 40px;
+            padding: 25px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1), 8px 8px 20px rgba(123, 75, 53, 0.4);
+            position: relative;
+        }
+
+        .leaf-deco { position: absolute; color: var(--forest-green); font-size: 1.5rem; opacity: 0.8; }
+        .leaf-top-left { top: -18px; left: 20px; transform: rotate(-30deg); }
+        .leaf-top-right { top: 10px; right: -15px; transform: rotate(45deg); }
+
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { font-size: 2rem; color: var(--wood-brown); display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .header h2 { font-size: 1rem; color: var(--wood-light); font-weight: normal; }
+
+        .track-title { text-align: center; font-size: 1.3rem; color: var(--forest-green); margin: 15px 0; font-weight: bold; }
+
+        .cover-area {
+            width: 120px; height: 120px; margin: 0 auto 20px;
+            background-color: var(--highlight-green);
+            border: 4px solid var(--wood-light);
+            border-radius: 30px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 4rem; color: var(--forest-green);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .btn { background: none; border: none; color: var(--wood-brown); font-size: 1.5rem; cursor: pointer; transition: transform 0.1s; }
+        .btn:hover { color: var(--forest-green); transform: scale(1.1); }
+        .btn.active { color: var(--forest-green); }
+        .btn-play { font-size: 2.5rem; color: var(--forest-green); }
+
+        .slider-container { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; font-size: 0.9rem; color: var(--wood-light); }
+        input[type="range"] { -webkit-appearance: none; width: 100%; height: 8px; background: #e0d8c8; border-radius: 5px; outline: none; }
+        #progress-bar::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--sky-blue); }
+        #volume-bar::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--forest-green); }
+
+        .search-box {
+            width: 100%; padding: 10px 15px; border: 2px solid var(--wood-light);
+            border-radius: 20px; background-color: transparent; font-family: inherit;
+            margin-bottom: 15px; outline: none;
+        }
+
+        .playlist { list-style: none; max-height: 150px; overflow-y: auto; border-top: 2px dashed var(--wood-light); padding-top: 10px; }
+        .playlist li { padding: 10px 15px; border-radius: 15px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 1.1rem; }
+        .playlist li:hover { background-color: rgba(220, 237, 200, 0.5); }
+        .playlist li.playing { background-color: var(--highlight-green); color: var(--forest-green); font-weight: bold; }
+        .playlist li.playing .fa-leaf { display: inline-block; }
+        .playlist li .fa-leaf { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="player-container">
+        <i class="fas fa-leaf leaf-deco leaf-top-left"></i>
+        <i class="fas fa-seedling leaf-deco leaf-top-right"></i>
+
+        <div class="header">
+            <h1 id="main-title">豬奶奶 <i class="fas fa-sun" style="font-size: 1.5rem; color: #e8b004;"></i></h1>
+            <h2>森林播放器</h2>
+        </div>
+
+        <div class="track-title" id="track-title">準備中...</div>
+        <div class="cover-area" id="cover-icon"><i class="fas fa-tree"></i></div>
+
+        <div class="slider-container">
+            <span id="current-time">00:00</span>
+            <input type="range" id="progress-bar" value="0" min="0" max="100">
+            <span id="total-time">00:00</span>
+        </div>
+
+        <div class="controls">
+            <button class="btn" id="btn-shuffle"><i class="fas fa-random"></i></button>
+            <button class="btn" id="btn-prev"><i class="fas fa-backward-step"></i></button>
+            <button class="btn btn-play" id="btn-play"><i class="fas fa-circle-play"></i></button>
+            <button class="btn" id="btn-next"><i class="fas fa-forward-step"></i></button>
+            <button class="btn" id="btn-repeat"><i class="fas fa-repeat"></i></button>
+        </div>
+
+        <div class="slider-container" style="justify-content: center;">
+            <i class="fas fa-volume-down"></i>
+            <input type="range" id="volume-bar" value="100" min="0" max="100" style="width: 60%;">
+            <i class="fas fa-volume-up"></i>
+        </div>
+
+        <input type="text" id="search-input" class="search-box" placeholder="搜尋曲目...">
+        <ul class="playlist" id="playlist"></ul>
+    </div>
+
+    <script>
+        const musicFiles = [
+            'https://github.com/tommy1207-lang/mp3/raw/main/song1.mp3',
+            'https://github.com/tommy1207-lang/mp3/raw/main/song2.mp3',
+            'https://github.com/tommy1207-lang/mp3/raw/main/song3.mp3'
+        ];
+
+        const natureIcons = ['fa-tree', 'fa-seedling', 'fa-cloud', 'fa-sun', 'fa-leaf', 'fa-dove'];
+        const audio = new Audio();
+        const playBtn = document.getElementById('btn-play');
+        const progressBar = document.getElementById('progress-bar');
+        const playlistEl = document.getElementById('playlist');
+        const trackTitleEl = document.getElementById('track-title');
+        const coverIconEl = document.getElementById('cover-icon');
+
+        let currentTrackIndex = 0;
+        let isPlaying = false;
+
+        function renderPlaylist() {
+            playlistEl.innerHTML = '';
+            musicFiles.forEach((file, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `<i class="fas fa-leaf"></i> <span>Track ${index + 1}</span>`;
+                li.onclick = () => loadTrack(index, true);
+                playlistEl.appendChild(li);
+            });
+        }
+
+        function loadTrack(index, playNow = false) {
+            currentTrackIndex = index;
+            audio.src = musicFiles[index];
+            trackTitleEl.innerText = `播放中：第 ${index + 1} 首`;
+            const randomIcon = natureIcons[Math.floor(Math.random() * natureIcons.length)];
+            coverIconEl.innerHTML = `<i class="fas ${randomIcon}"></i>`;
+            
+            document.querySelectorAll('.playlist li').forEach((li, i) => {
+                li.className = i === index ? 'playing' : '';
+            });
+
+            if (playNow) playTrack();
+        }
+
+        function playTrack() { audio.play(); isPlaying = true; playBtn.innerHTML = '<i class="fas fa-circle-pause"></i>'; }
+        function pauseTrack() { audio.pause(); isPlaying = false; playBtn.innerHTML = '<i class="fas fa-circle-play"></i>'; }
+
+        playBtn.onclick = () => isPlaying ? pauseTrack() : playTrack();
+        document.getElementById('btn-next').onclick = () => loadTrack((currentTrackIndex + 1) % musicFiles.length, true);
+        document.getElementById('btn-prev').onclick = () => loadTrack((currentTrackIndex - 1 + musicFiles.length) % musicFiles.length, true);
+
+        audio.ontimeupdate = () => {
+            if(audio.duration) {
+                progressBar.value = (audio.currentTime / audio.duration) * 100;
+                document.getElementById('current-time').textContent = formatTime(audio.currentTime);
+                document.getElementById('total-time').textContent = formatTime(audio.duration);
+            }
+        };
+
+        progressBar.oninput = (e) => audio.currentTime = (e.target.value / 100) * audio.duration;
+        document.getElementById('volume-bar').oninput = (e) => audio.volume = e.target.value / 100;
+
+        function formatTime(s) {
+            const m = Math.floor(s / 60);
+            const sec = Math.floor(s % 60);
+            return `${m}:${sec.toString().padStart(2, '0')}`;
+        }
+
+        // --- PWA Service Worker 註冊 ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(reg => {
+                    console.log('豬奶奶 Service Worker 註冊成功');
+                }).catch(err => console.log('註冊失敗', err));
+            });
+        }
+
+        renderPlaylist();
+        loadTrack(0);
+    </script>
+</body>
+</html>
